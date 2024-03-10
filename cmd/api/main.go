@@ -10,6 +10,9 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 
+	"github.com/marcos-nsantos/go-container-pattern/internal/handlers"
+	"github.com/marcos-nsantos/go-container-pattern/internal/repositories"
+	"github.com/marcos-nsantos/go-container-pattern/internal/services"
 	"github.com/marcos-nsantos/go-container-pattern/internal/structs"
 )
 
@@ -28,7 +31,15 @@ func main() {
 	if err != nil {
 		log.Fatalf("banco não conectou. Err=%v", err.Error())
 	}
-	db.AutoMigrate(&structs.Installment{})
+
+	err = db.AutoMigrate(&structs.Installment{})
+	if err != nil {
+		log.Fatalf("erro ao executar migração. Err=%v", err)
+	}
+
+	repositoryContainer := repositories.GetRepositories(db)
+	servicesContainer := services.GetServices(repositoryContainer)
+	handlers.NewHandlerContainer(server, servicesContainer)
 
 	server.Get("/heath", func(c *fiber.Ctx) error {
 		return c.Status(http.StatusOK).JSON("pong :)")
